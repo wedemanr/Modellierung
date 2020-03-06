@@ -1,0 +1,96 @@
+#!/usr/bin/gnuplot --persist
+
+### MODUL METEOROLOGISCHE MODELLIERUNG
+### Uebung 09.11.2016
+### David Grawe <david.grawe@uni-hamburg.de>
+
+###
+### flow over a hill
+###
+
+### hill dimensions
+Lzb = 300. #m
+Lxb = 3000. #m
+
+### atmospheric conditions
+U = 10 #m/s
+theta0 = 290 #K
+dthetadz = .005 #K/m
+
+### misc
+g = 9.81 #m/s**2
+
+### domain size
+set xrange [x=-80000:80000]
+set yrange [y=0:10000]
+
+### NOTE: y denotes the vertical coordinate
+
+### definition bell shaped hill
+zs(x) = Lzb * ( Lxb**2 ) / ( Lxb**2 + x**2 )
+
+### displacement of stream lines
+delta(x,y) = zs(x) * cos ( N/U*(y-zs(x)) ) - x/Lxb*zs(x) * sin( N/U * (y-zs(x)) )
+
+### Brunt-Vaisala frequency
+N = sqrt( g/theta0 * dthetadz )
+
+### temperature
+theta(x,y) = theta0 * ( 1 + ( N**2 * (y-delta(x,y))/g ) )
+
+### horizontal wind
+u(x,y) = U * ( 1 - dddz(x,y) )
+
+### dddz
+dddz(x,y) = -zs(x) * sin( N/U * (y-zs(x)) ) * N/U - x/Lxb * zs(x) * cos( N/U * (y-zs(x)) ) * N/U
+
+### vertical wind
+w(x,y) = U * dddx(x,y)
+
+dddx(x,y) = - ( 2 * Lxb**3 * Lzb**2 * N * x**2 * cos(N/U*(y-zs(x))) ) / ( U * (Lxb**2+x**2)**3 ) \
+            - ( 2 * Lxb**2 * Lzb        * x    * cos(N/U*(y-zs(x))) ) /       (Lxb**2+x**2)**2   \
+            - ( 2 * Lxb**4 * Lzb**2 * N * x    * sin(N/U*(y-zs(x))) ) / ( U * (Lxb**2+x**2)**3 ) \
+            + ( 2 * Lxb    * Lzb        * x**2 * sin(N/U*(y-zs(x))) ) /       (Lxb**2+x**2)**2   \
+            - (     Lxb    * Lzb               * sin(N/U*(y-zs(x))) ) /       (Lxb**2+x**2)
+
+### plot settings
+set view map
+unset surface
+set contour base
+set cntrparam linear
+set cntrparam levels auto
+
+### plot to file
+set terminal postscript enhanced color
+set output "bergueberstroemung_gnuplot.eps"
+
+### plot dimensions
+set multiplot layout 2, 2 title "Uebung A2: Analytische Loesung Bergueberstroemung"
+#set multiplot layout 2, 2 title "Lzb=300, Lxb=3000, U=10, theta0=290K, dthetadz=.005K/m"
+
+### plot hill
+#plot zs(x)
+
+### plot displacement
+set title "Vertical displacement [m]"
+set cntrparam levels incremental -200,40,200
+splot delta(x,y)
+
+### plot temperature
+set title "Potential temperature [K]"
+set cntrparam levels auto
+splot theta(x,y)
+
+### plot horizontal wind
+set title "Horizontal wind speed [m/s]"
+set cntrparam levels auto
+splot u(x,y)
+
+### plot vertical wind
+set title "Vertical wind speed [m/s]"
+set cntrparam levels auto
+splot w(x,y)
+
+unset multiplot
+
+#EOF

@@ -1,0 +1,5 @@
+   dddx = - ( 2 * Lxb^3 * Lzb^2 * N * x^2 * cos(N/U*(z-zs(x))) ) / ( U * (Lxb^2+x^2)^3 ) \
+          - ( 2 * Lxb^2 * Lzb       * x   * cos(N/U*(z-zs(x))) ) /       (Lxb^2+x^2)^2   \
+          - ( 2 * Lxb^4 * Lzb^2 * N * x   * sin(N/U*(z-zs(x))) ) / ( U * (Lxb^2+x^2)^3 ) \
+          + ( 2 * Lxb   * Lzb       * x^2 * sin(N/U*(z-zs(x))) ) /       (Lxb^2+x^2)^2   \
+          - (     Lxb   * Lzb             * sin(N/U*(z-zs(x))) ) /       (Lxb^2+x^2)

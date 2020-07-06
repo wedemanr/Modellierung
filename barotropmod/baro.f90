@@ -277,6 +277,7 @@
 !
 !     compute inverse Laplacian to get streamfunction tendency
 !
+			write(*,*) "Inputfield before call:", SUM(zdt)  
       call sor(zdt,dsdt,dx,dy,NX,NY)
 !
       return
@@ -421,7 +422,64 @@
       real :: pdy                  ! y grid point distance
       real :: pdf(0:kx+1,0:ky+1)   ! input: field
       real :: pf(0:kx+1,0:ky+1)    ! output: inverse Laplacian of input
+
+			integer, parameter :: NP=1
+			integer            :: niter
+			integer						 :: i,j,jiter=1       !loop parameter
+			real, parameter    :: Zeps = 10**(-NP)  
+			real							 :: zn(0:kx+1,0:ky+1) !new work array
+			real							 :: zo(0:kx+1,0:ky+1) !old work array
+			real 							 :: zomega=1.5
+			real               :: zfac							!shortcut 
+			real							 :: zierr             !initial error
+			real               :: zlocerr						!local error for each gridcell
+			real							 :: zerr              !actual error
+
+			
+			write(*,*) "Inputfield:", SUM(pdf)
+
+			niter = kx*ky*(NP/3)
+			zfac = 2./(pdx*pdx)+2./(pdy*pdy)
 !
+!			Choose Intital Field
+			zn(:,:)=0.
+!
+! 		Calculate Initial Error
+			zierr=0.
+			do j=1,ky
+				do i=1,kx
+					zlocerr = -zfac*zn(i,j)+(zn(i-1,j)+zn(i+1,j))/(pdx*pdx)+(zn(i,j-1)+zn(i,j+1))/(pdy*pdy)-pdf(i,j)
+					zierr = zierr + abs(zlocerr)/real(kx*ky)
+				end do
+			end do
+!
+			write(*,*) "Initial Error:",zierr
+!
+!			iteration
+!
+			do while(jiter <= niter)
+				zerr = 0
+				zo(:,:)=zn(:,:)
+				do j=1,ky
+					do i=1,kx
+						zlocerr = -zfac*zn(i,j)+(zn(i-1,j)+zn(i+1,j))/(pdx*pdx)+(zn(i,j-1)+zn(i,j+1))/(pdy*pdy)-pdf(i,j)    !Local error
+						zn(i,j) = zo(i,j)+Zomega*zlocerr/zfac																																!SOR 
+						zerr = zerr + abs(zlocerr)/real(kx*ky)
+					end do
+				end do
+			
+				if (zerr <= Zeps*zierr) exit   !Exit Loop
+				call boundary(zn,kx,ky)
+				jiter = jiter + 1
+			end do
+
+			if (jiter >= niter) then
+				write(*,*) "Maximum iterations needed",niter
+				write(*,*) "error, initial error(ie), epsilon*ie= ",zerr,zierr,Zeps*zierr
+			end if
+
+			pf(:,:) = zn(:,:)  !Output
+
       return
       end
 !
